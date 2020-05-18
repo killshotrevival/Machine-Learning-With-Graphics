@@ -5,6 +5,10 @@ import pandas
 import pyperclip
 from linear_support import *
 import time
+import threading
+
+import logistic
+
 	
 screen_height = pyautogui.size()[1]
 screen_width = pyautogui.size()[0]
@@ -18,7 +22,7 @@ random_color = sp.rand_color()
 def linear_window_loop(display_main):
 	#overall variables
 	close_window = False
-	algo_selected = 'GD'
+	algo_selected = 'OD'
 	pressed = True
 
 	#execution variables
@@ -36,9 +40,14 @@ def linear_window_loop(display_main):
 	freeze = False
 
 	trained = False
+	
 
 	while not close_window:
 		q+=1
+		#print('threads', threading.enumerate())
+		if threading.activeCount()==1 and freeze:
+			freeze = False
+			end_clock = time.time()
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				pygame.quit
@@ -96,47 +105,44 @@ def linear_window_loop(display_main):
 		features_rec.draw(display_main, clickable = False, dont_change = True)	
 
 		#Optimizing Algorithm
-		if algo_selected == 'GD' :
-			window_data['algo_rec_prop']['msg'] = 'Gradient Descent'
-		elif algo_selected == 'NE' :
-			window_data['algo_rec_prop']['msg'] = 'Normal Equation'
+		if algo_selected == 'OD' :
+			window_data['algo_rec_prop']['msg'] = 'Ordinary'
+		elif algo_selected == 'RR' :
+			window_data['algo_rec_prop']['msg'] = 'Ridge'
+		elif algo_selected == 'LS' :
+			window_data['algo_rec_prop']['msg'] = 'Lasso'
 
 		algo_rec = sp.button(window_data['algo_rec_prop'])
 		window_data['algo_rec_prop']['pressed'] = algo_rec.draw(display_main, clickable = True, freeze = freeze)
 		if window_data['algo_rec_prop']['pressed'] and pressed and not freeze:
-			if algo_selected == 'NE':
-				algo_selected = 'GD'
-			elif algo_selected == 'GD':
-				algo_selected = 'NE'
+			if algo_selected == 'OD':
+				algo_selected = 'RR'
+			elif algo_selected == 'RR':
+				algo_selected = 'LS'
+			elif algo_selected == 'LS':
+				algo_selected = 'OD'
 			pressed = False
 
 		#learing button
 		learning_b = sp.button(window_data['learning_b_prop'], shape='circle')
 		window_data['learning_b_prop']['pressed'] = learning_b.draw(display_main, clickable = True, freeze = freeze)
-		if window_data['learning_b_prop']['pressed']:
+		if window_data['learning_b_prop']['pressed'] and not freeze and pressed:
+			freeze = True
+			window_data['fun_completed'] = False
 			start_clock = time.time()
+			val = 0
 
 			#make a thread for the final function
+			compute_thread = thread(name = 'Compute_thread', fun = compute )
+			#threads.append(compute_thread)
+			compute_thread.setDaemon(True)
+			compute_thread.start()
 
-			end_clock = time.time()
 			time_updated = False
 			total_cost_updated = False
 			window_data['time']['inner']['inner_msg'] = 'Time Elapsed : '
 			window_data['total_cost']['inner']['inner_msg'] = 'Total Cost :  '
-			
-		#learning rate Prompt
-		learning_rate_ = sp.rect_new(window_data['learning_rate_p_prop']['outer_rect_prop'], type = 'shadow')
-		learning_rate_box = learning_rate_.draw(display_main)
 
-		alpha_desc = sp.message(window_data['learning_rate_p_prop']['alpha_text'], window_data['learning_rate_p_prop']['alpha_text_prop'], text_font)
-		alpha_desc_box = alpha_desc.message_display(display_main)
-
-		learning_rate_b = sp.button(window_data['learning_rate_p_prop']['inner_rect_prop'])
-		window_data['learning_rate_p_prop']['inner_rect_prop']['pressed'] = learning_rate_b.draw(display_main, clickable = True, dont_change = True)
-
-		if window_data['learning_rate_p_prop']['inner_rect_prop']['pressed']:
-			input_active = 'alpha'
-			window_data['learning_rate_p_prop']['inner_rect_prop']['msg'] = ''
 
 		#Regularize Parameter Prompt
 		Regularize_rate_ = sp.rect_new(window_data['regularize_para_p_prop']['outer_rect_prop'], type = 'shadow')
@@ -148,7 +154,7 @@ def linear_window_loop(display_main):
 		Regularize_rate_b = sp.button(window_data['regularize_para_p_prop']['inner_rect_prop'])
 		window_data['regularize_para_p_prop']['inner_rect_prop']['pressed'] = Regularize_rate_b.draw(display_main, clickable = True, dont_change = True)
 
-		if window_data['regularize_para_p_prop']['inner_rect_prop']['pressed']:
+		if window_data['regularize_para_p_prop']['inner_rect_prop']['pressed'] and not freeze:
 			input_active = 'lambda'
 			window_data['regularize_para_p_prop']['inner_rect_prop']['msg'] = ''
 
@@ -161,7 +167,7 @@ def linear_window_loop(display_main):
 
 		graph_check = sp.check_box(window_data['graph_needed']['check_box'])
 		state = graph_check.draw(display_main)
-		if state and pressed:
+		if state and pressed and not freeze:
 			if window_data['graph_needed']['check_box']['state'] == 'inactive':
 				window_data['graph_needed']['check_box']['state'] = 'active'
 
@@ -179,10 +185,13 @@ def linear_window_loop(display_main):
 		progress_box = progress_desc.message_display(display_main)
 
 		progress_bar_ = sp.rect_new(window_data['progress_bar']['progress_bar_prop'], type = 'progress')
-		if q%60==0:
+		if q%40==0 and val<100 and freeze:
 			val+=1
+		if window_data['fun_completed']:
+			val = 100
 		progress_bar_box = progress_bar_.draw(display_main, val)
 
+		pygame.draw.rect(display_main, (250,250,250),(590, 145, 55,50))
 		window_data['progress_bar']['percent']['percent_msg'] = str(val)+'%'
 		progress_percent_desc = sp.message(window_data['progress_bar']['percent']['percent_msg'],window_data['progress_bar']['percent']['percent_prop'])
 		progress_percent_box = progress_percent_desc.message_display(display_main)
@@ -191,9 +200,9 @@ def linear_window_loop(display_main):
 		total_cost_ = sp.rect_new(window_data['total_cost']['outer_rect'], type = 'normal')
 		total_cost_box = total_cost_.draw(display_main)
 
-		if not total_cost_updated:
-			window_data['total_cost']['inner']['inner_msg'] = window_data['total_cost']['inner']['inner_msg']+str(total_cost_value)
-			total_cost_updated = True
+		# if not total_cost_updated:
+		# 	window_data['total_cost']['inner']['inner_msg'] = window_data['total_cost']['inner']['inner_msg']+str(total_cost_value)
+		# 	total_cost_updated = True
 		total_cost_desc = sp.message(window_data['total_cost']['inner']['inner_msg'], window_data['total_cost']['inner']['inner_prop'])
 		total_cost_box = total_cost_desc.message_display(display_main)
 
@@ -201,11 +210,42 @@ def linear_window_loop(display_main):
 		time_ = sp.rect_new(window_data['time']['outer_rect'], type = 'normal')
 		time_box = time_.draw(display_main)
 
-		if not time_updated:
+		if not time_updated and not freeze:
 			window_data['time']['inner']['inner_msg'] = window_data['time']['inner']['inner_msg']+ str(round(end_clock-start_clock,2))+' seconds'
 			time_updated = True
 		time_msg = sp.message(window_data['time']['inner']['inner_msg'],window_data['time']['inner']['inner_prop'] )
 		time_msg_box = time_msg.message_display(display_main)
+
+		#Mean Absolute Error
+		mean_abs_ = sp.rect_new(window_data['mean_abs']['outer_rect'], type = 'normal')
+		mean_abs_box = mean_abs_.draw(display_main)
+
+		if not mean_abs_updated:
+			window_data['mean_abs']['inner']['inner_msg'] = window_data['mean_abs']['inner']['inner_msg']+ str(round(end_clock-start_clock,2))
+			mean_abs_updated = True
+		mean_abs_msg = sp.message(window_data['mean_abs']['inner']['inner_msg'],window_data['mean_abs']['inner']['inner_prop'] )
+		mean_abs_msg_box = mean_abs_msg.message_display(display_main)
+
+		#Mean Square Error
+		mean_sqr_ = sp.rect_new(window_data['mean_sqr']['outer_rect'], type = 'normal')
+		mean_sqr_box = mean_sqr_.draw(display_main)
+
+		if not mean_sqr_updated:
+			window_data['mean_sqr']['inner']['inner_msg'] = window_data['mean_sqr']['inner']['inner_msg']+ str(round(end_clock-start_clock,2))
+			mean_sqr_updated = True
+		mean_sqr_msg = sp.message(window_data['mean_sqr']['inner']['inner_msg'],window_data['mean_sqr']['inner']['inner_prop'] )
+		mean_sqr_msg_box = mean_sqr_msg.message_display(display_main)
+
+		#Root Mean Square Error
+		root_mean_sqr_ = sp.rect_new(window_data['root_mean_sqr']['outer_rect'], type = 'normal')
+		root_mean_sqr_box = root_mean_sqr_.draw(display_main)
+
+		if not root_mean_sqr_updated:
+			window_data['root_mean_sqr']['inner']['inner_msg'] = window_data['root_mean_sqr']['inner']['inner_msg']+ str(round(end_clock-start_clock,2))
+			root_mean_sqr_updated = True
+		root_mean_sqr_msg = sp.message(window_data['root_mean_sqr']['inner']['inner_msg'],window_data['root_mean_sqr']['inner']['inner_prop'] )
+		root_mean_sqr_msg_box = root_mean_sqr_msg.message_display(display_main)
+
 
 
 ###############################################################################################################################################################################################
@@ -224,7 +264,7 @@ def linear_window_loop(display_main):
 		input_path_inner = sp.button(window_data['predicted_input_path']['inner_rect_prop'])
 		window_data['predicted_input_path']['inner_rect_prop']['pressed'] = input_path_inner.draw(display_main, clickable = True, dont_change = True)
 
-		if window_data['predicted_input_path']['inner_rect_prop']['pressed']:
+		if window_data['predicted_input_path']['inner_rect_prop']['pressed'] and not freeze and window_data['Computation_status'] == 'Done':
 			input_active = 'predict_path'
 			window_data['predicted_input_path']['inner_rect_prop']['msg'] = ''
 
@@ -235,43 +275,22 @@ def linear_window_loop(display_main):
 		outputfile_inner = sp.button(window_data['outputfile_name']['inner_rect_prop'])
 		window_data['outputfile_name']['inner_rect_prop']['pressed'] = outputfile_inner.draw(display_main, clickable = True, dont_change = True)
 
-		if window_data['outputfile_name']['inner_rect_prop']['pressed']:
+		if window_data['outputfile_name']['inner_rect_prop']['pressed'] and not freeze and window_data['Computation_status'] == 'Done':
 			input_active = 'file_name'
 			window_data['outputfile_name']['inner_rect_prop']['msg'] = ''
 
-		#Mean Absolute Error
-		mean_abs_ = sp.rect_new(window_data['mean_abs']['outer_rect'], type = 'normal')
-		mean_abs_box = mean_abs_.draw(display_main)
-
-		if not time_updated:
-			window_data['mean_abs']['inner']['inner_msg'] = window_data['mean_abs']['inner']['inner_msg']+ str(round(end_clock-start_clock,2))
-			mean_abs_updated = True
-		mean_abs_msg = sp.message(window_data['mean_abs']['inner']['inner_msg'],window_data['mean_abs']['inner']['inner_prop'] )
-		mean_abs_msg_box = mean_abs_msg.message_display(display_main)
-
-		#Mean Square Error
-		mean_sqr_ = sp.rect_new(window_data['mean_sqr']['outer_rect'], type = 'normal')
-		mean_sqr_box = mean_sqr_.draw(display_main)
-
-		if not time_updated:
-			window_data['mean_sqr']['inner']['inner_msg'] = window_data['mean_sqr']['inner']['inner_msg']+ str(round(end_clock-start_clock,2))
-			mean_sqr_updated = True
-		mean_sqr_msg = sp.message(window_data['mean_sqr']['inner']['inner_msg'],window_data['mean_sqr']['inner']['inner_prop'] )
-		mean_sqr_msg_box = mean_sqr_msg.message_display(display_main)
-
-		#Root Mean Square Error
-		root_mean_sqr_ = sp.rect_new(window_data['root_mean_sqr']['outer_rect'], type = 'normal')
-		root_mean_sqr_box = root_mean_sqr_.draw(display_main)
-
-		if not time_updated:
-			window_data['root_mean_sqr']['inner']['inner_msg'] = window_data['root_mean_sqr']['inner']['inner_msg']+ str(round(end_clock-start_clock,2))
-			root_mean_sqr_updated = True
-		root_mean_sqr_msg = sp.message(window_data['root_mean_sqr']['inner']['inner_msg'],window_data['root_mean_sqr']['inner']['inner_prop'] )
-		root_mean_sqr_msg_box = root_mean_sqr_msg.message_display(display_main)
-
 		#Predict Button
 		predict_b = sp.button(window_data['predict_b_prop'], shape='rect')
-		window_data['predict_b_prop']['pressed'] = predict_b.draw(display_main, clickable = True, dont_change =False)
+		window_data['predict_b_prop']['pressed'] = predict_b.draw(display_main, clickable = True, dont_change =False, freeze = freeze)
+
+		if window_data['predict_b_prop']['pressed'] and not freeze and window_data['Computation_status'] == 'Done':
+			predict_thread = thread(name = 'predict', fun = predict_fun)
+			predict_thread.start()
+
+			window_data['fun_completed'] = False
+			val = 0
+			freeze = True
+
 
 
 
@@ -289,7 +308,15 @@ def linear_window_loop(display_main):
 
 
 ###############################################################################################################################################################################################
-		
+
+		forward_b = sp.button(window_data['forward_button'], shape='rect')
+		window_data['forward_button']['pressed'] = forward_b.draw(display_main, clickable = True, freeze = freeze)
+		if window_data['forward_button']['pressed'] and not freeze and pressed:
+			logistic.logistic_window_start(window_data['data_set'])
+
+
+
+
 		#print('input_active = ', input_active)
 		pygame.display.update()
 		clock.tick(60)
@@ -305,5 +332,5 @@ def linear_window_start(data_set=None):
 	linear_window_loop(display_main)
 
 
-linear_window_start()
-#C:\Users\91981\Desktop\ML and DL Projects\NNG\winequality-red.csv
+#linear_window_start()
+#C:\Users\91981\Desktop\ML and DL Projects\NNG\dataset\winequality-red.csv

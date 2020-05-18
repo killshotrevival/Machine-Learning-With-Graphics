@@ -1,10 +1,9 @@
 import support as sp 
-
 import pandas  
 import numpy as np  
-#import seaborn as seabornInstance 
 from sklearn.model_selection import train_test_split 
-from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import LabelBinarizer
 from sklearn import metrics
 
 import threading
@@ -15,11 +14,11 @@ random_color = sp.rand_color()
 font_color = (0,191,255)
 text_font = 'freesansbold.ttf'
 
-window_data = {'window_prop':{'height': 700,
-								'width' : 1380,
-								'name'  : 'Linear Regression'
+window_data = {'window_prop':{'height': 600,
+								'width' : 1565,
+								'name'  : 'Logistic Regression'
 								},
-				'background_color':(250,250,250),
+				'background_color':(10,10,10),
 				'data_set': {
 							'X':pandas.DataFrame(),
 							'y': pandas.DataFrame()	
@@ -46,8 +45,8 @@ window_data = {'window_prop':{'height': 700,
 											'text_size' : 30,
 											'inactive_text_color' : font_color
 												},
-				'algo_rec_prop' : {
-											'msg'  :'',
+				'classes_rec_prop' : {
+											'msg'  :'Classes - ',
 											'button_x': 470,
 											'button_y': 30,
 											'button_width' : 180,
@@ -56,7 +55,7 @@ window_data = {'window_prop':{'height': 700,
 											'textfont' : text_font,
 											'text_size' : 30,
 											'inactive_text_color' : font_color,
-											'pressed' : False
+											
 												},
 				'learning_b_prop' : {
 											'msg'  :'Learn',
@@ -74,8 +73,8 @@ window_data = {'window_prop':{'height': 700,
 
 				'regularize_para_p_prop' : {
 											'outer_rect_prop':{
-														'x':810,
-														'y': 25,
+														'x':1035,
+														'y': 32,
 														'width':220,
 														'height':50,
 														'foreground_color':(240,240,240),
@@ -83,12 +82,12 @@ window_data = {'window_prop':{'height': 700,
 
 															},
 											'lambda_text':'Lambda',
-											'lambda_text_prop':(850,53,30,font_color),       #(width, height, size, color))
+											'lambda_text_prop':(1080,60,30,font_color),       #(width, height, size, color))
 											'inner_rect_prop': {
 
 																'msg'  :'',
-																'button_x': 895,
-																'button_y': 29,
+																'button_x': 1125,
+																'button_y': 36,
 																'button_width' : 125,
 																'button_height' : 40,
 																'inactive_color' : (220,220,220),
@@ -98,29 +97,43 @@ window_data = {'window_prop':{'height': 700,
 																'pressed' : False
 															}
 											},
-						'graph_needed':{	'outer_rect_prop':{
-														'x':1060,
-														'y': 25,
-														'width':200,
+						'epocs_para_p_prop':{	'outer_rect_prop':{
+														'x':1295,
+														'y': 32,
+														'width':220,
 														'height':50,
 														'foreground_color':(240,240,240),
 														'background_color': font_color
 
 															},
-											'text':{
-													'text_msg':'Graph',
-													'text_prop':(1190,50,30,font_color)
-											},
-											'check_box':{
-														'x':1080,
-														'y':32,
-														'width':30,
-														'height':30,
-														'inactive_color':(220,220,220),
-														'active_color': font_color,
-														'state':'inactive'
+											'epocs_text':'Epocs',
+											'epocs_text_prop':(1340,60,30,font_color),       #(width, height, size, color))
+											'inner_rect_prop': {
+
+																'msg'  :'',
+																'button_x': 1385,
+																'button_y': 36,
+																'button_width' : 125,
+																'button_height' : 40,
+																'inactive_color' : (220,220,220),
+																'textfont' : text_font,
+																'text_size' : 30,
+																'inactive_text_color' : (0,0,0),
+																'pressed' : False
 											}
-										},
+											},
+						'algo_rec_prop' : {
+											'msg'  :'',
+											'button_x': 815,
+											'button_y': 30,
+											'button_width' : 180,
+											'button_height' : 50,
+											'inactive_color' : (240,240,240),
+											'textfont' : text_font,
+											'text_size' : 30,
+											'inactive_text_color' : font_color,
+											'pressed' : False
+												},
 						'progress_bar': {
 										'text':{
 												'text_msg': 'Progress',
@@ -139,19 +152,6 @@ window_data = {'window_prop':{'height': 700,
 													'percent_prop': (640,165,30, font_color)
 														}
 										},
-						'total_cost':{
-									'outer_rect':{
-												'x':80,
-												'y':210,
-												'width':520,
-												'height':40,
-												'foreground_color':(240,230,230)	
-													},
-									'inner':{
-											'inner_msg':'Total Cost =  ',
-											'inner_prop': (350,230,30, font_color)
-													}	
-										},
 						'time': {
 								'outer_rect':{
 											'x':80,
@@ -165,54 +165,19 @@ window_data = {'window_prop':{'height': 700,
 									'inner_prop': (350,300,30, font_color)
 										}
 								},
-						'mean_abs': {
-
-								'outer_rect':{
-											'x':80,
-											'y':350,
-											'width':520,
-											'height':40,
-											'foreground_color':(240,230,230)
-											},
-								'inner':{
-									'inner_msg': 'Mean Abs Error :',
-									'inner_prop': (330,370,30, font_color)
-										
-										}	
+						'score':{
+									'outer_rect':{
+												'x':80,
+												'y':210,
+												'width':520,
+												'height':40,
+												'foreground_color':(240,230,230)	
+													},
+									'inner':{
+											'inner_msg':'Score =  ',
+											'inner_prop': (350,230,30, font_color)
+													}	
 										},
-
-						'mean_sqr': {
-
-								'outer_rect':{
-											'x':80,
-											'y':420,
-											'width':520,
-											'height':40,
-											'foreground_color':(240,230,230)
-											},
-								'inner':{
-									'inner_msg': 'Mean Sqr Error :',
-									'inner_prop': (330,440,30, font_color)
-										
-										}	
-										},
-
-						'root_mean_sqr': {
-
-								'outer_rect':{
-											'x':80,
-											'y':490,
-											'width':520,
-											'height':40,
-											'foreground_color':(240,230,230)
-											},
-								'inner':{
-									'inner_msg': 'Root Mean Sqr Error :',
-									'inner_prop': (330,510,30, font_color)
-										
-										}	
-										},
-
 						'predicted_input_path': {	'text':{
 															'text_msg':'Predict',
 															'text_prop':(1080, 130, 30, font_color)
@@ -220,7 +185,7 @@ window_data = {'window_prop':{'height': 700,
 													'outer_rect':{
 																	'x':830,
 																	'y':157,
-																	'width':500,
+																	'width':640,
 																	'height':50,
 																	'foreground_color':(245,245,245),
 																	'background_color': (100,100,100)
@@ -229,7 +194,7 @@ window_data = {'window_prop':{'height': 700,
 																'msg'  :'Predict input file path here',
 																'button_x': 840,
 																'button_y': 160,
-																'button_width' : 480,
+																'button_width' : 620,
 																'button_height' : 35,
 																'inactive_color' : (255,255,255),
 																'textfont' : text_font,
@@ -242,7 +207,7 @@ window_data = {'window_prop':{'height': 700,
 													'outer_rect':{
 																	'x':830,
 																	'y':237,
-																	'width':500,
+																	'width':640,
 																	'height':50,
 																	'foreground_color':(245,245,245),
 																	'background_color': (100,100,100)
@@ -252,7 +217,7 @@ window_data = {'window_prop':{'height': 700,
 																'msg'  :'outputfile name here',
 																'button_x': 840,
 																'button_y': 240,
-																'button_width' : 480,
+																'button_width' : 620,
 																'button_height' : 35,
 																'inactive_color' : (255,255,255),
 																'textfont' : text_font,
@@ -264,7 +229,7 @@ window_data = {'window_prop':{'height': 700,
 
 						'predict_b_prop':{
 											'msg'  :'Predict',
-											'button_x': 1000,
+											'button_x': 1070,
 											'button_y': 310,
 											'button_width' : 160,
 											'button_height' : 50,
@@ -277,28 +242,29 @@ window_data = {'window_prop':{'height': 700,
 						'status_bar':{
 										'outer_rect':{
 											'x':0,
-											'y':660,
-											'width':1540,
+											'y':560,
+											'width':1565,
 											'height':40,
 											'foreground_color':(150,150,150)
 											},
 										'inner':{
 											'inner_msg': 'Status:',
-											'inner_prop': (60,680,30, (20, 20, 20)),
-											'inner_msg1': '',
-											'inner_prop1': (720,680,25, (0, 0, 0))	
+											'inner_prop': (60,580,30, (20, 20, 20)),
+											'inner_msg1': 'Hey, My name is Twelcon. I am here to help you :)',
+											'inner_prop1': (720,580,25, (0, 0, 0))	
 											}
 									},
+
 					'forward_button':{
-									'msg'  :'F',
-									'button_x': 1355,
-									'button_y': 300,
-									'button_width' : 25,
+									'msg'  :'NN',
+									'button_x': 1537,
+									'button_y': 170,
+									'button_width' : 28,
 									'button_height' : 100,
-									'inactive_color' : (10,10,10),
+									'inactive_color' : (200,200,200),
 									'textfont' : text_font,
 									'text_size' : 20,
-									'inactive_text_color' : (200,200,200),
+									'inactive_text_color' : (40,40,40),
 									'pressed' : False
 										},
 					'Computation_status': '',
@@ -321,49 +287,53 @@ def compute():
 	window_data['status_bar']['inner']['inner_msg1'] = ''
 	window_data['Computation_status'] = ''
 	try:
-		#print('alpha', window_data['regularize_para_p_prop']['inner_rect_prop']['msg'])
-		alpha = float(window_data['regularize_para_p_prop']['inner_rect_prop']['msg'])
-		if window_data['algo_rec_prop']['msg'] == 'Ordinary':
-			regressor = LinearRegression()
-		elif window_data['algo_rec_prop']['msg'] == 'Ridge':
+		if not window_data['regularize_para_p_prop']['inner_rect_prop']['msg']:
+			alpha = 1
+		else:
 			alpha = float(window_data['regularize_para_p_prop']['inner_rect_prop']['msg'])
-			regressor = Ridge(alpha =alpha)
-		elif window_data['algo_rec_prop']['msg'] == 'Lasso':
-			alpha = float(window_data['regularize_para_p_prop']['inner_rect_prop']['msg'])
-			regressor = Lasso(alpha =alpha)
+		if not window_data['epocs_para_p_prop']['inner_rect_prop']['msg']:
+			epocs = 100
+		else:
+			epocs = int(window_data['epocs_para_p_prop']['inner_rect_prop']['msg'])
+		if alpha<0 or epocs<0:
+			raise ValueError
+			
+		# data_set = pandas.read_csv(r'C:\Users\91981\Desktop\ML and DL Projects\LoanPrediction\train.csv')
 
-		X_train, X_test, y_train, y_test = train_test_split(window_data['data_set']['X'], window_data['data_set']['y'], test_size=0.2, random_state=0)
+		# x = data_set.iloc[:,:-1]
+		# window_data['data_set']['y'] = data_set.iloc[:,-1]
+		# X_final_data = pandas.get_dummies(x)
+		# X_final_data = X_final_data.fillna(X_final_data.mean())
+		# window_data['data_set']['X'] = X_final_data
 
-		#regressor = LinearRegression()  
-		prop = regressor.fit(X_train, y_train)
+		regressor = LogisticRegression(solver=window_data['algo_rec_prop']['msg'], C = 1/alpha, max_iter = epocs)
+		# print(regressor)
+
+		if len(set(window_data['data_set']['y'])) == 2:
+			l = LabelBinarizer()
+			y1 = l.fit_transform(window_data['data_set']['y'])
+
+		X_train, X_test, y_train, y_test = train_test_split(window_data['data_set']['X'], y1, test_size=0.2, random_state=0)
+
+		prop = regressor.fit(X_train, y_train.ravel())
+		# print('y_train', y_train.shape)
 
 		# coeff_df = pandas.DataFrame(regressor.coef_, X.columns, columns=['Coefficient'])
 		#print('Coefficients', regressor.coef_)
 
 		# y_pred = regressor.predict(X_test)
-		y_pred = prop.predict(X_test)
-		diff = (y_pred-y_test)
-		window_data['total_cost']['inner']['inner_msg'] = 'Total Cost =  '+str(round(diff.sum(),2))
-		window_data['mean_abs']['inner']['inner_msg'] = 'Mean Absolute Error =  '+str(round(metrics.mean_absolute_error(y_test, y_pred),2))
-		window_data['mean_sqr']['inner']['inner_msg'] = 'Mean Squared Error =  '+str(round(metrics.mean_squared_error(y_test, y_pred),2))
-		window_data['root_mean_sqr']['inner']['inner_msg'] = 'Root Mean Squared Error =  '+str(round(np.sqrt(metrics.mean_squared_error(y_test, y_pred)),2))
-
-		# print('Mean Absolute Error:', metrics.mean_absolute_error(y_test, y_pred))  
-		# print('Mean Squared Error:', metrics.mean_squared_error(y_test, y_pred))  
-		# print('Root Mean Squared Error:', np.sqrt(metrics.mean_squared_error(y_test, y_pred)))
+		score = prop.score(X_test, y_test.ravel())
+		window_data['score']['inner']['inner_msg'] = 'Score =  '+str(round(score,2))
+		
+		
 		window_data['status_bar']['inner']['inner_msg1'] = 'Mission Accomplished, whats next..'
 		window_data['Computation_status'] = 'Done'
 		window_data['compute_prop'] = prop
-		#print(window_data['compute_prop'])
-		# return prop
-		#print('exiting preproces')
-		# try:
-		# except:
-		# 	window_data['status_bar']['inner']['inner_msg1'] = 'An error occured while saving the plot'
+
 		window_data['fun_completed'] = True
 
 	except ValueError:
-		window_data['status_bar']['inner']['inner_msg1'] = 'An error occured while computing the data, please change the value in lambda(float)'
+		window_data['status_bar']['inner']['inner_msg1'] = 'An error occured while computing the data, please change the value in lambda(float) or Epocs(int)'
 
 
 def predict_fun():

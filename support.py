@@ -15,7 +15,7 @@ class rand_color:
 	def genrate(self):
 		return tuple(random.sample(range(255),3))
 
-
+print
 class _window:
 	def __init__(self,window_data):
 		self.window_width = window_data['width']
@@ -147,12 +147,12 @@ class load_data:
 	def pre_process(self):
 
 		#preproces
-		print('INside preproces')
+		#print('INside preproces')
 		x = self.data_set.iloc[:,:-1]
 		self.y_final_data = self.data_set.iloc[:,-1]
 		self.X_final_data = pandas.get_dummies(x)
 		self.X_final_data = self.X_final_data.fillna(self.X_final_data.mean())
-		print('exiting preproces')
+		#print('exiting preproces')
 		return self.X_final_data, self.y_final_data
 
 class rect_new:

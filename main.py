@@ -1,6 +1,6 @@
 import pygame
 import support as sp
-import linear,logistic,nn,svm
+import linear,logistic,nn
 import pyperclip
 import pandas
 #from pandas import ExcelWriter
@@ -12,58 +12,6 @@ random_color = sp.rand_color()
 #writer1 = ExcelWriter(r'C:\Users\91981\Desktop\ML and DL Projects\Loan Prediction\oooohlll.xlsx')
 #writer2 = ExcelWriter(r'C:\Users\91981\Desktop\ML and DL Projects\Loan Prediction\hellooowindow.xlsx')
 
-# window_data = {
-# 				'window_prop':{'height': 700,
-# 								'width' : 800,
-# 								'name'  : 'Machine Learning With Graphics'
-# 								},
-# 				'background_color':(250,250,250),
-# 				'title' : 'MLG',
-# 				'title_prop' : (400,50,50, random_color.genrate()),       #(width, height, size, color)
-# 				'desc' : 'Machine Learning With Graphics',
-# 				'desc_prop' : (400, 90, 15, random_color.genrate()),      #(width, height, size, color)
-# 				'error_msg' : {
-# 								'Error' : 'Error Occured Please load the data in the required format only',
-# 								'No Error' : 'Data loaded sucessfully, proceed with algo selection'
-# 				},
-# 				'error_msg_prop' : (400, 670, 20, (161,161,161)),
-# 				'format': 'Format for loading the database',
-# 				'format_prop': (400, 450, 25, random_color.genrate()),
-# 				'data_path_prop': (360, 635, 25, (0,0,0) ),                         #(width, height, size, color)
-# 				'linear_regression_b_prop': linear.window_data['main_window_b_prop'],
-# 				'logistic_regression_b_prop': logistic.window_data['main_window_b_prop'], 
-# 				'neural_network_b_prop': nn.window_data['main_window_b_prop'],
-# 				'svm_b_prop': svm.window_data['main_window_b_prop'],
-# 				'path_box_prop' : {
-# 										'x':50,
-# 										'y':610,
-# 										'width':600,
-# 										'height':50,
-# 										'color':(225, 225, 225),
-# 										'text_color':(0,0,0),
-# 										'text_size':20
-# 									},                        							
-# 				'paste_b_prop': {
-# 									'msg'  :'Load',
-# 									'button_x': 660,
-# 									'button_y': 610,
-# 									'button_width' : 100,
-# 									'button_height' : 50,
-# 									'inactive_color' : (192,192,192),
-# 									'textfont' : 'modernno20',
-# 									'text_size' : 30,
-# 									'inactive_text_color' : (0,0,0),
-# 									'pressed' : False
-
-# 								},
-# 				'database_processed': {'X': pandas.DataFrame(),
-# 										'y': pandas.DataFrame()
-# 									}
-# }
-
-	
-
-
 def main_window_loop(display_main):
 	database_path = 'File Address Here..'
 	typing = False
@@ -71,6 +19,7 @@ def main_window_loop(display_main):
 	display_error = False
 	error_occuried = False
 	close_window = False
+
 	while not close_window:
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
@@ -130,19 +79,25 @@ def main_window_loop(display_main):
 		window_data['linear_regression_b_prop']['pressed'] = linear_regression_b.draw(display_main)
 		if window_data['linear_regression_b_prop']['pressed']:
 			#quit()
-			start_linear_loop()
+			if data_loaded == True:
+				start_linear_loop()
 
 		#2)Logistic Regression
 		logistic_regression_b = sp.button(window_data['logistic_regression_b_prop'])
 		window_data['logistic_regression_b_prop']['pressed'] = logistic_regression_b.draw(display_main)
+		if window_data['logistic_regression_b_prop']['pressed']:
+			#quit()
+			if data_loaded == True:
+				start_logistic_loop()
+
 
 		#3)Neural Networks
 		neural_network_b = sp.button(window_data['neural_network_b_prop'])
 		window_data['neural_network_b_prop']['pressed'] = neural_network_b.draw(display_main)
-
-		#4)Support Vector Machine
-		svm_b = sp.button(window_data['svm_b_prop'])
-		window_data['svm_b_prop']['pressed'] = svm_b.draw(display_main)
+		if window_data['neural_network_b_prop']['pressed']:
+			#quit()
+			if data_loaded == True:
+				start_neural_loop()
 
 
 		#Database
@@ -198,10 +153,18 @@ def load_data_main(path):
 
 def start_linear_loop():
 	linear.linear_window_start(window_data['database_processed'])
+
+def start_logistic_loop():
+	logistic.logistic_window_start(window_data['database_processed'])
+
+def start_neural_loop():
+	nn.neural_window_start(window_data['database_processed'])
 	 
 
 
-if __name__=='__main__':
+def main_window_start():
 	main_window = sp._window(window_data['window_prop'])
 	display_main = main_window.create_window()
 	main_window_loop(display_main)
+
+main_window_start()

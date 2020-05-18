@@ -1,6 +1,5 @@
 import pandas
 import support as sp
-import linear,logistic,nn,svm
 
 random_color = sp.rand_color()
 
@@ -22,10 +21,42 @@ window_data = {
 				'format': 'Format for loading the database',
 				'format_prop': (400, 450, 25, random_color.genrate()),
 				'data_path_prop': (360, 635, 25, (0,0,0) ),                         #(width, height, size, color)
-				'linear_regression_b_prop': linear.window_data['main_window_b_prop'],
-				'logistic_regression_b_prop': logistic.window_data['main_window_b_prop'], 
-				'neural_network_b_prop': nn.window_data['main_window_b_prop'],
-				'svm_b_prop': svm.window_data['main_window_b_prop'],
+				'linear_regression_b_prop': {
+											'msg'  :'Linear Regression',
+											'button_x': 50,
+											'button_y': 150,
+											'button_width' : 310,
+											'button_height' : 50,
+											'inactive_color' : (245,245,245),
+											'textfont' : 'modernno20',
+											'text_size' : 30,
+											'inactive_text_color' : (30,144,255),
+											'pressed' : False
+						},
+				'logistic_regression_b_prop': {
+											'msg'  :'Logistic Regression',
+											'button_x': 450,
+											'button_y': 150,
+											'button_width' : 310,
+											'button_height' : 50,
+											'inactive_color' : (245,245,245),
+											'textfont' : 'modernno20',
+											'text_size' : 30,
+											'inactive_text_color' : (30,144,255),
+											'pressed' : False
+
+						}, 
+				'neural_network_b_prop': {'msg'  :'Neural Networks',
+										'button_x': 50,
+										'button_y': 250,
+										'button_width' : 310+310+90,
+										'button_height' : 50,
+										'inactive_color' : (245,245,245),
+										'textfont' : 'modernno20',
+										'text_size' : 30,
+										'inactive_text_color' : (30,144,255),
+										'pressed' : False},
+										
 				'path_box_prop' : {
 										'x':50,
 										'y':610,
